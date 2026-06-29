@@ -334,7 +334,7 @@ Answer the user question using only the uploaded study material.
                 answer = (response.text or "").strip()
                 if not answer:
                     answer = "The uploaded study material does not provide this information."
-            except Exception:
+            except Exception as e:     answer = f"Error: {e}"
                 answer = "Sorry, the assistant could not generate a response at this moment. Please try again."
 
         st.markdown(answer)
