@@ -2,7 +2,7 @@ import glob
 from pathlib import Path
 
 import streamlit as st
-import google.generativeai as genai
+import requests
 from PyPDF2 import PdfReader
 
 
