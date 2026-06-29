@@ -334,10 +334,10 @@ Answer the user question using only the uploaded study material.
                 answer = (response.text or "").strip()
                 if not answer:
                     answer = "The uploaded study material does not provide this information."
-           except Exception as e:
-    answer = f"Error: {e}"
+            except Exception as e:
+                answer = f"Error: {e}"
 
-        st.markdown(answer)
+            st.markdown(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
 
