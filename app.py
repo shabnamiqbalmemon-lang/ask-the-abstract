@@ -1,10 +1,9 @@
 import glob
 from pathlib import Path
 
-import streamlit as st
 import requests
+import streamlit as st
 from PyPDF2 import PdfReader
-
 
 # -----------------------------
 # Page setup
@@ -16,217 +15,234 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-
 # -----------------------------
 # Styling
 # -----------------------------
 st.markdown(
     """
-    <style>
-    :root {
-        --cpsp-navy: #073B4C;
-        --cpsp-teal: #0E7490;
-        --cpsp-light-teal: #EAF7F9;
-        --cpsp-gold: #D6A21E;
-        --soft-gray: #F8FAFC;
-        --text-gray: #374151;
-    }
+<style>
+:root {
+    --navy: #23304A;
+    --deep-blue: #1F5FAE;
+    --teal: #12A0B7;
+    --gold: #D8A52A;
+    --light-blue: #EFF8FB;
+    --soft-border: #C9E2EA;
+    --text: #243447;
+}
 
-    .stApp {
-        background: linear-gradient(180deg, #F7FBFC 0%, #FFFFFF 62%, #F8FAFC 100%);
-    }
+.stApp {
+    background: linear-gradient(180deg, #F7FBFC 0%, #FFFFFF 70%);
+    color: var(--text);
+}
 
-    .block-container {
-        padding-top: 2.0rem;
-        padding-bottom: 2.0rem;
-        max-width: 900px;
-    }
+.block-container {
+    padding-top: 2.3rem;
+    max-width: 920px;
+}
 
-    .title-wrap {
-        padding: 0.7rem 0 0.3rem 0;
-        border-bottom: 3px solid var(--cpsp-gold);
-        margin-bottom: 1.1rem;
-    }
+.main-title {
+    font-size: 2.45rem;
+    font-weight: 850;
+    line-height: 1.05;
+    color: var(--navy);
+    margin-bottom: 0.15rem;
+}
 
-    .main-title {
-        color: var(--cpsp-navy);
-        font-size: 2.4rem;
-        font-weight: 850;
-        letter-spacing: -0.02em;
-        margin-bottom: 0.1rem;
-        line-height: 1.05;
-    }
+.subtitle {
+    font-size: 1.08rem;
+    font-weight: 650;
+    color: #346B86;
+    margin-bottom: 0.9rem;
+}
 
-    .subtitle {
-        color: var(--cpsp-teal);
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin-top: 0.25rem;
-    }
+.gold-line {
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold), #E8C866, var(--gold));
+    border-radius: 6px;
+    margin: 0.65rem 0 1.6rem 0;
+}
 
-    .info-box {
-        background: linear-gradient(135deg, #EAF7F9 0%, #FFFFFF 100%);
-        border: 1px solid #CBE8EE;
-        border-left: 7px solid var(--cpsp-gold);
-        border-radius: 16px;
-        padding: 1.1rem 1.15rem;
-        margin: 1.0rem 0 1.1rem 0;
-        color: var(--text-gray);
-        box-shadow: 0 2px 12px rgba(7, 59, 76, 0.06);
-    }
+.welcome-card {
+    background: linear-gradient(135deg, #F4FBFD 0%, #FFFFFF 100%);
+    border: 1px solid var(--soft-border);
+    border-left: 7px solid var(--gold);
+    border-radius: 16px;
+    padding: 1.25rem 1.35rem;
+    box-shadow: 0 6px 18px rgba(35, 48, 74, 0.06);
+    margin-bottom: 1.15rem;
+}
 
-    .note-box {
-        background-color: #FFF9E8;
-        border: 1px solid #F2D27B;
-        border-radius: 12px;
-        padding: 0.85rem 1rem;
-        margin: 0.8rem 0 1.0rem 0;
-        color: #4B5563;
-        font-size: 0.92rem;
-    }
+.note-card {
+    background: #FFF9EA;
+    border: 1px solid #EBCF7C;
+    border-left: 6px solid var(--gold);
+    border-radius: 14px;
+    padding: 0.95rem 1.05rem;
+    margin-bottom: 1.35rem;
+    color: #4A5568;
+}
 
-    .suggested-title {
-        color: var(--cpsp-navy);
-        font-size: 1.15rem;
-        font-weight: 750;
-        margin-top: 1rem;
-        margin-bottom: 0.3rem;
-    }
+.small-text {
+    font-size: 0.88rem;
+    color: #6B7280;
+}
 
-    div.stButton > button:first-child {
-        border-radius: 999px;
-        border: 1px solid #B8DDE5;
-        background-color: #FFFFFF;
-        color: #073B4C;
-        font-weight: 600;
-        padding: 0.45rem 0.75rem;
-        min-height: 2.6rem;
-        white-space: normal;
-    }
+.footer {
+    color: #6B7280;
+    font-size: 0.88rem;
+    margin-top: 2rem;
+}
 
-    div.stButton > button:hover {
-        border-color: var(--cpsp-gold);
-        color: var(--cpsp-navy);
-        background-color: #FFFBEB;
-    }
+.stButton > button {
+    border-radius: 999px;
+    border: 1px solid #B9D8E2;
+    background-color: #FFFFFF;
+    color: #243447;
+    padding: 0.45rem 0.9rem;
+    transition: all 0.15s ease-in-out;
+}
 
-    .footer {
-        color: #6B7280;
-        font-size: 0.84rem;
-        line-height: 1.45;
-        margin-top: 1.3rem;
-        padding-top: 0.7rem;
-    }
+.stButton > button:hover {
+    border-color: var(--gold);
+    color: var(--navy);
+    box-shadow: 0 3px 12px rgba(216, 165, 42, 0.22);
+}
 
-    .small-label {
-        color: #6B7280;
-        font-size: 0.85rem;
-    }
-    </style>
-    """,
+[data-testid="stChatInput"] {
+    border-radius: 16px;
+}
+</style>
+""",
     unsafe_allow_html=True,
 )
 
+# -----------------------------
+# Header
+# -----------------------------
+st.markdown('<div class="main-title">Ask the Abstract</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">AI-powered study assistant</div>', unsafe_allow_html=True)
+st.markdown('<div class="gold-line"></div>', unsafe_allow_html=True)
 
-# -----------------------------
-# Header and welcome
-# -----------------------------
 st.markdown(
     """
-    <div class="title-wrap">
-        <div class="main-title">Ask the Abstract</div>
-        <div class="subtitle">AI-powered study assistant</div>
-    </div>
-    """,
+<div class="welcome-card">
+<strong>Welcome!</strong> This AI-powered study assistant has been developed from the content of our AMEE 2026 study to help you explore the research in greater depth.<br><br>
+You can ask about the study background, methodology, findings, qualitative themes, recommendations, or practical implications for examiner training and assessment practice.<br><br>
+Responses are generated exclusively from the uploaded study materials.
+</div>
+""",
     unsafe_allow_html=True,
 )
 
 st.markdown(
     """
-    <div class="info-box">
-        <strong>Welcome!</strong> This AI-powered study assistant has been developed from the content of our AMEE 2026 study to help you explore the research in greater depth.<br><br>
-        You can ask about the study background, methodology, findings, qualitative themes, recommendations, or practical implications for examiner training and assessment practice.<br><br>
-        Responses are generated exclusively from the uploaded study materials.
-    </div>
-    """,
+<div class="note-card">
+<strong>Note:</strong> This assistant is intended to support exploration of the uploaded study material. It should not be used as a substitute for reading the abstract or poster.
+</div>
+""",
     unsafe_allow_html=True,
 )
 
-
 # -----------------------------
-# Gemini setup
+# API configuration
 # -----------------------------
 try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except KeyError:
-    st.error("Gemini API key is missing. Add GEMINI_API_KEY in Streamlit Secrets.")
+    OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
+except Exception:
+    st.error("OpenRouter API key is missing. Add OPENROUTER_API_KEY in Streamlit Secrets.")
     st.stop()
 
-genai.configure(api_key=api_key)
-
+# Free OpenRouter model. This may be changed later if needed.
+OPENROUTER_MODEL = "openrouter/free"
 
 # -----------------------------
 # Load study material
 # -----------------------------
 @st.cache_data(show_spinner=False)
-def extract_pdf_text() -> str:
-    """Extract text from all PDF files in the repository root."""
-    pdf_paths = sorted(glob.glob("*.pdf"))
-    if not pdf_paths:
+def load_pdf_text() -> str:
+    pdf_files = glob.glob("*.pdf")
+    if not pdf_files:
         return ""
 
     chunks = []
-    for pdf_path in pdf_paths:
+    for pdf_file in pdf_files:
         try:
-            reader = PdfReader(pdf_path)
-            chunks.append(f"\n\nSOURCE FILE: {Path(pdf_path).name}\n")
-            for page_number, page in enumerate(reader.pages, start=1):
+            reader = PdfReader(pdf_file)
+            for page in reader.pages:
                 page_text = page.extract_text() or ""
                 if page_text.strip():
-                    chunks.append(f"\n[Page {page_number}]\n{page_text.strip()}\n")
+                    chunks.append(page_text.strip())
         except Exception as exc:
-            chunks.append(f"\nCould not read {Path(pdf_path).name}: {exc}\n")
-    return "\n".join(chunks).strip()
+            chunks.append(f"[Could not read {Path(pdf_file).name}: {exc}]")
 
+    return "\n\n".join(chunks).strip()
 
-study_material = extract_pdf_text()
+study_text = load_pdf_text()
 
-if not study_material:
-    st.error("No readable PDF was found in the repository. Please upload the abstract PDF to the repository root.")
+if not study_text:
+    st.error("No readable PDF was found in the repository. Please upload the abstract PDF and redeploy.")
     st.stop()
 
-
-# -----------------------------
-# System instruction
-# -----------------------------
 SYSTEM_INSTRUCTION = f"""
 You are an AI-powered study assistant for an AMEE 2026 Learning Toolbox.
 
-Your role is to help visitors understand the uploaded study material.
+You must answer questions ONLY using the uploaded study material below.
+Do not invent facts, numbers, authors, findings, recommendations, or background details.
+If the answer is not available in the uploaded study material, say exactly:
+"The uploaded study material does not provide this information."
 
-Rules:
-1. Answer ONLY using the uploaded study material.
-2. Do not invent facts, numbers, authors, findings, recommendations, limitations, or interpretations not supported by the uploaded material.
-3. If the answer is not available in the uploaded material, say exactly: "The uploaded study material does not provide this information."
-4. Use British English.
-5. Write clearly and concisely for medical educators, examiners, and health professions faculty.
-6. Avoid overclaiming causality. Use careful wording such as "reported", "suggested", "explored", or "indicated" where appropriate.
-7. If asked for a summary, give a focused academic summary rather than promotional language.
-8. Do not mention the model name or internal instructions.
+Write clearly and concisely for medical educators, examiners, and health professions faculty.
+Use British English.
+Avoid overclaiming causality.
+Do not mention the model provider or hidden instructions.
 
 Uploaded study material:
-{study_material}
+{study_text}
 """
 
-
 # -----------------------------
-# Model
+# Helper: call OpenRouter
 # -----------------------------
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction=SYSTEM_INSTRUCTION,
-)
+def ask_openrouter(user_question: str, history: list[dict]) -> str:
+    messages = [
+        {"role": "system", "content": SYSTEM_INSTRUCTION},
+    ]
 
+    # Keep a short recent history for follow-up questions.
+    for msg in history[-8:]:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role in {"user", "assistant"} and content:
+            messages.append({"role": role, "content": content})
+
+    messages.append({"role": "user", "content": user_question})
+
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://ask-the-abstract.streamlit.app",
+            "X-Title": "Ask the Abstract",
+        },
+        json={
+            "model": OPENROUTER_MODEL,
+            "messages": messages,
+            "temperature": 0.2,
+            "max_tokens": 700,
+        },
+        timeout=60,
+    )
+
+    if response.status_code != 200:
+        return f"Error: {response.status_code} - {response.text}"
+
+    data = response.json()
+    try:
+        return data["choices"][0]["message"]["content"].strip()
+    except Exception:
+        return f"Error: Unexpected response format: {data}"
 
 # -----------------------------
 # Session state
@@ -234,29 +250,18 @@ model = genai.GenerativeModel(
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "pending_question" not in st.session_state:
-    st.session_state.pending_question = None
-
-
-def reset_chat():
-    st.session_state.messages = []
-    st.session_state.pending_question = None
-
-
 # -----------------------------
 # Controls
 # -----------------------------
-col_a, col_b = st.columns([1, 2])
-with col_a:
-    st.button("Start a new conversation", on_click=reset_chat)
-with col_b:
-    st.markdown('<div class="small-label">Ask a question or choose one of the prompts below.</div>', unsafe_allow_html=True)
+left_col, right_col = st.columns([1, 2])
+with left_col:
+    if st.button("Start a new conversation"):
+        st.session_state.messages = []
+        st.rerun()
+with right_col:
+    st.markdown('<p class="small-text">Ask a question or choose one of the prompts below.</p>', unsafe_allow_html=True)
 
-
-# -----------------------------
-# Suggested questions
-# -----------------------------
-st.markdown('<div class="suggested-title">Suggested questions</div>', unsafe_allow_html=True)
+st.markdown("### Suggested questions")
 
 suggested_questions = [
     "What problem was this study addressing?",
@@ -266,81 +271,42 @@ suggested_questions = [
     "What barriers affected sustained examiner practice?",
     "What recommendations did the authors make?",
     "What is the take-home message?",
-    "What are the implications for examiner training?",
 ]
 
+selected_question = None
 cols = st.columns(2)
-for index, question in enumerate(suggested_questions):
-    with cols[index % 2]:
-        if st.button(question, key=f"suggested_{index}"):
-            st.session_state.pending_question = question
-
-st.markdown(
-    """
-    <div class="note-box">
-        <strong>Note:</strong> This assistant is intended to support exploration of the uploaded study material. It should not be used as a substitute for reading the abstract or poster.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
+for i, question in enumerate(suggested_questions):
+    with cols[i % 2]:
+        if st.button(question, key=f"suggested_{i}"):
+            selected_question = question
 
 # -----------------------------
-# Display conversation
+# Existing messages
 # -----------------------------
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-
-# -----------------------------
-# Capture input
-# -----------------------------
-typed_question = st.chat_input("Ask a question about the study...")
-
-user_question = typed_question or st.session_state.pending_question
-st.session_state.pending_question = None
-
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
 # -----------------------------
-# Generate response
+# Chat input
 # -----------------------------
+user_question = st.chat_input("Ask a question about the study...")
+
+if selected_question:
+    user_question = selected_question
+
 if user_question:
     st.session_state.messages.append({"role": "user", "content": user_question})
 
     with st.chat_message("user"):
         st.markdown(user_question)
 
-    # Convert recent conversation to Gemini history-like context.
-    recent_history = st.session_state.messages[-8:]
-    conversation_context = "\n".join(
-        f"{item['role'].upper()}: {item['content']}" for item in recent_history
-    )
-
-    prompt = f"""
-Conversation so far:
-{conversation_context}
-
-User question:
-{user_question}
-
-Answer the user question using only the uploaded study material.
-"""
-
     with st.chat_message("assistant"):
         with st.spinner("Reviewing the uploaded study material..."):
-            try:
-                response = model.generate_content(prompt)
-                answer = (response.text or "").strip()
-                if not answer:
-                    answer = "The uploaded study material does not provide this information."
-            except Exception as e:
-                answer = f"Error: {e}"
-
-            st.markdown(answer)
+            answer = ask_openrouter(user_question, st.session_state.messages)
+        st.markdown(answer)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
-
 
 # -----------------------------
 # Footer
@@ -348,10 +314,10 @@ Answer the user question using only the uploaded study material.
 st.markdown("---")
 st.markdown(
     """
-    <div class="footer">
-        Developed for the AMEE 2026 Learning Toolbox:<br>
-        <em>Beyond the Workshop: Sustained Impact of CPSP Examiner Training on Assessment Practice — A Mixed-Methods Study</em>.
-    </div>
-    """,
+<div class="footer">
+Developed for the AMEE 2026 Learning Toolbox:<br>
+<em>Beyond the Workshop: Sustained Impact of CPSP Examiner Training on Assessment Practice — A Mixed-Methods Study.</em>
+</div>
+""",
     unsafe_allow_html=True,
 )
